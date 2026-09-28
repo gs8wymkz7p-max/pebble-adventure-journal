@@ -44,12 +44,12 @@ textarea{min-height:100px;resize:vertical}.actions{display:flex;gap:8px;justify-
 .detail h2{font-family:Georgia,serif;font-size:29px;margin:0 0 5px}.detail-meta{color:var(--muted);line-height:1.7}.notes{margin-top:16px;padding:15px;background:#f4f0e6;border-radius:15px;white-space:pre-wrap}
 @media(max-width:620px){.grid{grid-template-columns:1fr}.stats{grid-template-columns:repeat(3,1fr)}.hero{padding:17px}.paw{font-size:40px}.photo{height:190px}.formgrid{grid-template-columns:1fr}.field.full{grid-column:auto}h1{font-size:29px}}
 </style>
-<link rel="manifest" href="./manifest.webmanifest"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="Pebble Journal"><meta name="apple-mobile-web-app-status-bar-style" content="default"></head>
+</head>
 <body>
 <div class="app">
 <header>
   <div><div class="eyebrow">Pebble's outdoor life</div><h1>Adventure Journal</h1><div class="subtitle">A little record of the trails, miles & memories.</div></div>
-  <button class="primary" onclick="openAdd()">+ Adventure</button>
+  <button class="primary" id="addAdventureBtn">+ Adventure</button>
 </header>
 
 <section class="hero">
@@ -67,7 +67,7 @@ textarea{min-height:100px;resize:vertical}.actions{display:flex;gap:8px;justify-
 <div id="cards" class="grid"></div>
 </div>
 
-<div id="modal" class="modal" onclick="if(event.target===this)closeModal()">
+<div id="modal" class="modal" id="modal">
   <div class="sheet" id="sheet"></div>
 </div>
 
@@ -97,7 +97,7 @@ function render(){
 }
 function openAdd(){
  document.querySelector("#sheet").innerHTML=`
- <button class="close" onclick="closeModal()">×</button><h2>New adventure</h2>
+ <button class="close" id="closeModalBtn">×</button><h2>New adventure</h2>
  <div class="formgrid">
   <div class="field"><label>Trail / location</label><input id="trail" placeholder="Wincopin Trails"></div>
   <div class="field"><label>Date</label><input id="date" type="date" value="${new Date().toISOString().slice(0,10)}"></div>
@@ -108,7 +108,7 @@ function openAdd(){
   <div class="field full"><label>Photo (optional)</label><input id="photo" type="file" accept="image/*"></div>
   <div class="field full"><label>Notes</label><textarea id="notes" placeholder="What did Pebble do? What did you notice?"></textarea></div>
  </div>
- <div class="actions"><button class="secondary" onclick="closeModal()">Cancel</button><button class="primary" onclick="addAdventure()">Save adventure</button></div>`;
+ <div class="actions"><button class="secondary" id="closeModalBtn">Cancel</button><button class="primary" id="saveAdventureBtn">Save adventure</button></div>`;
  document.querySelector("#modal").classList.add("open");
 }
 function addAdventure(){
@@ -120,14 +120,14 @@ function addAdventure(){
 function openDetail(id){
  const x=adventures.find(a=>a.id===id); if(!x)return;
  document.querySelector("#sheet").innerHTML=`
- <button class="close" onclick="closeModal()">×</button>
+ <button class="close" id="closeModalBtn">×</button>
  <div class="detail">
  <div class="detail-photo">${x.photo?`<img src="${x.photo}" alt="">`:"🌲"}</div>
  <div class="eyebrow">${esc(x.surface||"Trail")} · ${fmtDate(x.date)}</div>
  <h2>${esc(x.trail||"Unnamed adventure")}</h2>
  <div class="detail-meta"><b>${esc(x.distance||"0")} mi</b>${x.duration?" · "+esc(x.duration):""}${x.mood?" · Pebble was "+esc(x.mood):""}</div>
  ${x.notes?`<div class="notes">${esc(x.notes)}</div>`:""}
- <div class="actions"><button class="secondary" onclick="deleteAdventure('${x.id}')">Delete</button><button class="primary" onclick="closeModal()">Done</button></div>
+ <div class="actions"><button class="secondary" onclick="deleteAdventure('${x.id}')">Delete</button><button class="primary" id="closeModalBtn">Done</button></div>
  </div>`;
  document.querySelector("#modal").classList.add("open");
 }
@@ -135,5 +135,21 @@ function deleteAdventure(id){if(confirm("Delete this adventure?")){adventures=ad
 function closeModal(){document.querySelector("#modal").classList.remove("open")}
 render();
 </script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  const addBtn = document.getElementById('addAdventureBtn');
+  if (addBtn) addBtn.addEventListener('click', function(e){ e.preventDefault(); openAdd(); });
+
+  const modal = document.getElementById('modal');
+  if (modal) modal.addEventListener('click', function(e){ if(e.target===modal) closeModal(); });
+
+  document.addEventListener('click', function(e){
+    if (e.target && e.target.id === 'saveAdventureBtn') { e.preventDefault(); addAdventure(); }
+    if (e.target && e.target.id === 'closeModalBtn') { e.preventDefault(); closeModal(); }
+  });
+});
+</script>
+
 </body>
 </html>
