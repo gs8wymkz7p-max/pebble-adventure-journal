@@ -49,7 +49,7 @@ textarea{min-height:100px;resize:vertical}.actions{display:flex;gap:8px;justify-
 <div class="app">
 <header>
   <div><div class="eyebrow">Pebble's outdoor life</div><h1>Adventure Journal</h1><div class="subtitle">A little record of the trails, miles & memories.</div></div>
-  <button class="primary" id="addAdventureBtn">+ Adventure</button>
+  <button class="primary" id="addAdventureBtn" type="button" onclick="openAdd()">+ Adventure</button>
 </header>
 
 <section class="hero">
@@ -85,7 +85,7 @@ function render(){
   document.querySelector("#totalTrips").textContent=adventures.length;
   document.querySelector("#trailCount").textContent=trails.size;
   const el=document.querySelector("#cards");
-  if(!adventures.length){el.innerHTML='<div class="empty">No adventures yet.<br>Add Pebble\\'s first trail and start the journal.</div>';return}
+  if(!adventures.length){el.innerHTML='<div class="empty">No adventures yet.<br>Add Pebble\'s first trail and start the journal.</div>';return}
   el.innerHTML=adventures.slice().sort((a,b)=>b.date.localeCompare(a.date)).map(x=>`
     <article class="card" onclick="openDetail('${x.id}')">
       <div class="photo">${x.photo?`<img src="${x.photo}" alt="">`:"🌲"}</div>
