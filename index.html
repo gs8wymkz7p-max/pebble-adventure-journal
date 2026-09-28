@@ -72,81 +72,274 @@ textarea{min-height:100px;resize:vertical}.actions{display:flex;gap:8px;justify-
 </div>
 
 <script>
-const KEY="pebble-adventures-v1";
-let adventures=JSON.parse(localStorage.getItem(KEY)||"[]");
+const KEY = "pebble-adventures-v2";
+let adventures = [];
+let editingId = null;
 
-function save(){localStorage.setItem(KEY,JSON.stringify(adventures));render()}
-function esc(s){return String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]))}
-function fmtDate(d){if(!d)return "";return new Date(d+"T12:00:00").toLocaleDateString(undefined,{month:"short",day:"numeric",year:"numeric"})}
-function render(){
-  const miles=adventures.reduce((a,x)=>a+(parseFloat(x.distance)||0),0);
-  const trails=new Set(adventures.map(x=>x.trail.trim().toLowerCase()).filter(Boolean));
-  document.querySelector("#totalMiles").textContent=miles.toFixed(1);
-  document.querySelector("#totalTrips").textContent=adventures.length;
-  document.querySelector("#trailCount").textContent=trails.size;
-  const el=document.querySelector("#cards");
-  if(!adventures.length){el.innerHTML='<div class="empty">No adventures yet.<br>Add Pebble\'s first trail and start the journal.</div>';return}
-  el.innerHTML=adventures.slice().sort((a,b)=>b.date.localeCompare(a.date)).map(x=>`
-    <article class="card" onclick="openDetail('${x.id}')">
-      <div class="photo">${x.photo?`<img src="${x.photo}" alt="">`:"🌲"}</div>
-      <div class="cardbody"><h3>${esc(x.trail||"Unnamed trail")}</h3>
-      <div class="meta">${fmtDate(x.date)} · ${esc(x.distance||"0")} mi · ${esc(x.surface||"")}</div>
-      <div class="tags">${x.duration?`<span class="tag">${esc(x.duration)}</span>`:""}${x.mood?`<span class="tag">Pebble: ${esc(x.mood)}</span>`:""}</div>
+function loadData() {
+  try {
+    adventures = JSON.parse(localStorage.getItem(KEY) || "[]");
+    if (!Array.isArray(adventures)) adventures = [];
+  } catch (e) {
+    adventures = [];
+  }
+}
+
+function setStatus(message, isError=false) {
+  let el = document.getElementById("formStatus");
+  if (!el) {
+    el = document.createElement("div");
+    el.id = "formStatus";
+    el.style.cssText = "margin-top:10px;padding:10px 12px;border-radius:12px;font-size:13px;background:#f3efe6;color:#69736a;";
+    const actions = document.querySelector(".actions");
+    if (actions) actions.parentNode.insertBefore(el, actions);
+  }
+  el.textContent = message || "";
+  el.style.background = isError ? "#f7e4df" : "#f3efe6";
+  el.style.color = isError ? "#8a3d2f" : "#69736a";
+}
+
+function persist() {
+  try {
+    localStorage.setItem(KEY, JSON.stringify(adventures));
+    render();
+    return true;
+  } catch (e) {
+    setStatus("The photo is too large for the journal's storage. Try a smaller photo.", true);
+    return false;
+  }
+}
+
+function esc(s) {
+  return String(s ?? "").replace(/[&<>"']/g, c => ({
+    "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"
+  }[c]));
+}
+
+function fmtDate(d) {
+  if (!d) return "";
+  return new Date(d + "T12:00:00").toLocaleDateString(undefined,{
+    month:"short",day:"numeric",year:"numeric"
+  });
+}
+
+function render() {
+  const miles = adventures.reduce((a,x)=>a+(parseFloat(x.distance)||0),0);
+  const trails = new Set(adventures.map(x=>(x.trail||"").trim().toLowerCase()).filter(Boolean));
+  document.getElementById("totalMiles").textContent = miles.toFixed(1);
+  document.getElementById("totalTrips").textContent = adventures.length;
+  document.getElementById("trailCount").textContent = trails.size;
+
+  const el = document.getElementById("cards");
+  if (!adventures.length) {
+    el.innerHTML = '<div class="empty">No adventures yet.<br>Add Pebble\\'s first trail and start the journal.</div>';
+    return;
+  }
+
+  el.innerHTML = adventures.slice().sort((a,b)=>(b.date||"").localeCompare(a.date||"")).map(x=>`
+    <article class="card" onclick="openDetail('${esc(x.id)}')">
+      <div class="photo">${x.photo ? `<img src="${x.photo}" alt="">` : "🌲"}</div>
+      <div class="cardbody">
+        <h3>${esc(x.trail || "Unnamed trail")}</h3>
+        <div class="meta">${fmtDate(x.date)} · ${esc(x.distance || "0")} mi · ${esc(x.surface || "")}</div>
+        <div class="tags">
+          ${x.duration ? `<span class="tag">${esc(x.duration)}</span>` : ""}
+          ${x.mood ? `<span class="tag">Pebble: ${esc(x.mood)}</span>` : ""}
+        </div>
       </div>
     </article>`).join("");
 }
-function openAdd(){
- document.querySelector("#sheet").innerHTML=`
- <button class="close" id="closeModalBtn">×</button><h2>New adventure</h2>
- <div class="formgrid">
-  <div class="field"><label>Trail / location</label><input id="trail" placeholder="Wincopin Trails"></div>
-  <div class="field"><label>Date</label><input id="date" type="date" value="${new Date().toISOString().slice(0,10)}"></div>
-  <div class="field"><label>Distance (miles)</label><input id="distance" type="number" step="0.01" placeholder="3.44"></div>
-  <div class="field"><label>Surface</label><select id="surface"><option>Natural</option><option>Gravel</option><option>Mixed</option><option>Paved</option></select></div>
-  <div class="field"><label>Duration</label><input id="duration" placeholder="1 hr 20 min"></div>
-  <div class="field"><label>Pebble's mood</label><input id="mood" placeholder="Happy / curious / chaotic"></div>
-  <div class="field full"><label>Photo (optional)</label><input id="photo" type="file" accept="image/*"></div>
-  <div class="field full"><label>Notes</label><textarea id="notes" placeholder="What did Pebble do? What did you notice?"></textarea></div>
- </div>
- <div class="actions"><button class="secondary" id="closeModalBtn">Cancel</button><button class="primary" id="saveAdventureBtn">Save adventure</button></div>`;
- document.querySelector("#modal").classList.add("open");
-}
-function addAdventure(){
- const file=document.querySelector("#photo").files[0];
- const data={id:crypto.randomUUID(),trail:trail.value,date:date.value,distance:distance.value,surface:surface.value,duration:duration.value,mood:mood.value,notes:notes.value,photo:""};
- const finish=()=>{adventures.push(data);save();closeModal()};
- if(file){const r=new FileReader();r.onload=()=>{data.photo=r.result;finish()};r.readAsDataURL(file)}else finish();
-}
-function openDetail(id){
- const x=adventures.find(a=>a.id===id); if(!x)return;
- document.querySelector("#sheet").innerHTML=`
- <button class="close" id="closeModalBtn">×</button>
- <div class="detail">
- <div class="detail-photo">${x.photo?`<img src="${x.photo}" alt="">`:"🌲"}</div>
- <div class="eyebrow">${esc(x.surface||"Trail")} · ${fmtDate(x.date)}</div>
- <h2>${esc(x.trail||"Unnamed adventure")}</h2>
- <div class="detail-meta"><b>${esc(x.distance||"0")} mi</b>${x.duration?" · "+esc(x.duration):""}${x.mood?" · Pebble was "+esc(x.mood):""}</div>
- ${x.notes?`<div class="notes">${esc(x.notes)}</div>`:""}
- <div class="actions"><button class="secondary" onclick="deleteAdventure('${x.id}')">Delete</button><button class="primary" id="closeModalBtn">Done</button></div>
- </div>`;
- document.querySelector("#modal").classList.add("open");
-}
-function deleteAdventure(id){if(confirm("Delete this adventure?")){adventures=adventures.filter(x=>x.id!==id);save();closeModal()}}
-function closeModal(){document.querySelector("#modal").classList.remove("open")}
-render();
-</script>
 
-<script>
-document.addEventListener('DOMContentLoaded', function () {
-  const addBtn = document.getElementById('addAdventureBtn');
-  if (addBtn) addBtn.addEventListener('click', function(e){ e.preventDefault(); openAdd(); });
+function openAdd() {
+  editingId = null;
+  openForm(null);
+}
 
-  const modal = document.getElementById('modal');
-  if (modal) modal.addEventListener('click', function(e){ if(e.target===modal) closeModal(); });
+function openEdit(id) {
+  const x = adventures.find(a=>a.id===id);
+  if (x) {
+    editingId = id;
+    openForm(x);
+  }
+}
 
-  document.addEventListener('click', function(e){
-    if (e.target && e.target.id === 'saveAdventureBtn') { e.preventDefault(); addAdventure(); }
-    if (e.target && e.target.id === 'closeModalBtn') { e.preventDefault(); closeModal(); }
+function openForm(x) {
+  const isEdit = !!x;
+  const currentDate = x?.date || new Date().toISOString().slice(0,10);
+  document.getElementById("sheet").innerHTML = `
+    <button class="close" id="closeModalBtn" type="button">×</button>
+    <h2>${isEdit ? "Edit adventure" : "New adventure"}</h2>
+    <div class="formgrid">
+      <div class="field"><label>Trail / location</label><input id="trail" value="${esc(x?.trail||"")}" placeholder="Wincopin Trails"></div>
+      <div class="field"><label>Date</label><input id="date" type="date" value="${currentDate}"></div>
+      <div class="field"><label>Distance (miles)</label><input id="distance" type="number" step="0.01" value="${esc(x?.distance||"")}" placeholder="3.44"></div>
+      <div class="field"><label>Surface</label><select id="surface">
+        ${["Natural","Gravel","Mixed","Paved"].map(v=>`<option ${x?.surface===v?"selected":""}>${v}</option>`).join("")}
+      </select></div>
+      <div class="field"><label>Duration</label><input id="duration" value="${esc(x?.duration||"")}" placeholder="1 hr 20 min"></div>
+      <div class="field"><label>Pebble's mood</label><input id="mood" value="${esc(x?.mood||"")}" placeholder="Happy / curious / chaotic"></div>
+      <div class="field full"><label>Photo ${isEdit && x?.photo ? "(choose a new one to replace it)" : "(optional)"}</label><input id="photo" type="file" accept="image/*"></div>
+      ${isEdit && x?.photo ? `<div class="field full"><button class="secondary" type="button" id="removePhotoBtn">Remove current photo</button></div>` : ""}
+      <div class="field full"><label>Notes</label><textarea id="notes" placeholder="What did Pebble do? What did you notice?">${esc(x?.notes||"")}</textarea></div>
+    </div>
+    <div id="formStatus" style="margin-top:10px;padding:10px 12px;border-radius:12px;font-size:13px;background:#f3efe6;color:#69736a;">${isEdit ? "Changes are saved only when you tap Save changes." : ""}</div>
+    <div class="actions">
+      <button class="secondary" id="cancelBtn" type="button">Cancel</button>
+      <button class="primary" id="saveAdventureBtn" type="button">${isEdit ? "Save changes" : "Save adventure"}</button>
+    </div>`;
+  document.getElementById("modal").classList.add("open");
+
+  const removeBtn = document.getElementById("removePhotoBtn");
+  if (removeBtn) removeBtn.addEventListener("click", () => {
+    const target = adventures.find(a=>a.id===editingId);
+    if (target) target._removePhoto = true;
+    setStatus("Current photo will be removed when you save.");
+  });
+}
+
+function compressImage(file) {
+  return new Promise((resolve, reject) => {
+    if (!file) return resolve("");
+    if (!file.type.startsWith("image/")) return reject(new Error("Please choose an image file."));
+    const reader = new FileReader();
+    reader.onerror = () => reject(new Error("The photo could not be read."));
+    reader.onload = () => {
+      const img = new Image();
+      img.onerror = () => reject(new Error("The photo could not be opened."));
+      img.onload = () => {
+        const max = 1400;
+        const scale = Math.min(1, max / Math.max(img.width, img.height));
+        const canvas = document.createElement("canvas");
+        canvas.width = Math.max(1, Math.round(img.width * scale));
+        canvas.height = Math.max(1, Math.round(img.height * scale));
+        const ctx = canvas.getContext("2d");
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        let quality = 0.78;
+        let data = canvas.toDataURL("image/jpeg", quality);
+        // Keep localStorage usage modest.
+        while (data.length > 850000 && quality > 0.45) {
+          quality -= 0.08;
+          data = canvas.toDataURL("image/jpeg", quality);
+        }
+        resolve(data);
+      };
+      img.src = reader.result;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+async function saveAdventure() {
+  const btn = document.getElementById("saveAdventureBtn");
+  if (!btn) return;
+  btn.disabled = true;
+  btn.textContent = editingId ? "Saving…" : "Saving…";
+  setStatus("Saving your adventure…");
+
+  try {
+    const trail = document.getElementById("trail").value.trim();
+    const date = document.getElementById("date").value;
+    const distance = document.getElementById("distance").value;
+    const surface = document.getElementById("surface").value;
+    const duration = document.getElementById("duration").value.trim();
+    const mood = document.getElementById("mood").value.trim();
+    const notes = document.getElementById("notes").value.trim();
+    const file = document.getElementById("photo").files[0];
+
+    if (!trail) {
+      setStatus("Please enter a trail or location.", true);
+      btn.disabled = false; btn.textContent = editingId ? "Save changes" : "Save adventure";
+      return;
+    }
+    if (!date) {
+      setStatus("Please choose a date.", true);
+      btn.disabled = false; btn.textContent = editingId ? "Save changes" : "Save adventure";
+      return;
+    }
+
+    let target = editingId ? adventures.find(a=>a.id===editingId) : null;
+    if (!target) {
+      target = {id: (crypto.randomUUID ? crypto.randomUUID() : String(Date.now())), photo:""};
+      adventures.push(target);
+    }
+
+    target.trail = trail;
+    target.date = date;
+    target.distance = distance;
+    target.surface = surface;
+    target.duration = duration;
+    target.mood = mood;
+    target.notes = notes;
+
+    if (target._removePhoto) {
+      target.photo = "";
+      delete target._removePhoto;
+    }
+
+    if (file) target.photo = await compressImage(file);
+
+    if (!persist()) {
+      // If storage fails, don't lose the user's form entry; remove only a newly created blank record.
+      if (!editingId) adventures = adventures.filter(a=>a!==target);
+      return;
+    }
+
+    closeModal();
+  } catch (e) {
+    setStatus(e.message || "The adventure could not be saved. Please try again.", true);
+    btn.disabled = false;
+    btn.textContent = editingId ? "Save changes" : "Save adventure";
+  }
+}
+
+function openDetail(id) {
+  const x = adventures.find(a=>a.id===id);
+  if (!x) return;
+  document.getElementById("sheet").innerHTML = `
+    <button class="close" id="closeModalBtn" type="button">×</button>
+    <div class="detail">
+      <div class="detail-photo">${x.photo ? `<img src="${x.photo}" alt="">` : "🌲"}</div>
+      <div class="eyebrow">${esc(x.surface||"Trail")} · ${fmtDate(x.date)}</div>
+      <h2>${esc(x.trail||"Unnamed adventure")}</h2>
+      <div class="detail-meta"><b>${esc(x.distance||"0")} mi</b>${x.duration?" · "+esc(x.duration):""}${x.mood?" · Pebble was "+esc(x.mood):""}</div>
+      ${x.notes?`<div class="notes">${esc(x.notes)}</div>`:""}
+      <div class="actions">
+        <button class="secondary" id="deleteBtn" type="button">Delete</button>
+        <button class="secondary" id="editBtn" type="button">Edit</button>
+        <button class="primary" id="doneBtn" type="button">Done</button>
+      </div>
+    </div>`;
+  document.getElementById("modal").classList.add("open");
+  document.getElementById("editBtn").onclick = () => openEdit(x.id);
+  document.getElementById("deleteBtn").onclick = () => deleteAdventure(x.id);
+  document.getElementById("doneBtn").onclick = closeModal;
+}
+
+function deleteAdventure(id) {
+  if (confirm("Delete this adventure?")) {
+    adventures = adventures.filter(x=>x.id!==id);
+    persist();
+    closeModal();
+  }
+}
+
+function closeModal() {
+  document.getElementById("modal").classList.remove("open");
+  editingId = null;
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  loadData();
+  render();
+
+  document.getElementById("addAdventureBtn").addEventListener("click", openAdd);
+  document.getElementById("modal").addEventListener("click", e => {
+    if (e.target.id === "modal") closeModal();
+  });
+
+  document.addEventListener("click", e => {
+    if (e.target.id === "saveAdventureBtn") saveAdventure();
+    if (e.target.id === "closeModalBtn" || e.target.id === "cancelBtn") closeModal();
   });
 });
 </script>
