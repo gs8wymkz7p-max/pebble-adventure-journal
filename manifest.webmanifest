@@ -1,0 +1,9 @@
+{
+  "name": "Pebble's Adventure Journal",
+  "short_name": "Pebble Journal",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#f5f1e8",
+  "theme_color": "#5d745e",
+  "description": "A private nature journal for Pebble's adventures."
+}

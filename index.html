@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#f5f1e8">
+<title>Pebble's Adventure Journal</title>
+<style>
+:root{
+  --paper:#f5f1e8; --card:#fffdf8; --ink:#263128; --muted:#69736a;
+  --line:#d9d4c7; --accent:#5d745e; --accent2:#8c9f7c; --warm:#c49b68;
+  --shadow:0 8px 28px rgba(38,49,40,.08); --radius:20px;
+}
+*{box-sizing:border-box} body{margin:0;background:var(--paper);color:var(--ink);
+font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+button,input,select,textarea{font:inherit} button{cursor:pointer}
+.app{max-width:900px;margin:auto;padding:20px 16px 40px}
+header{padding:12px 2px 22px;display:flex;justify-content:space-between;align-items:flex-end;gap:12px}
+.eyebrow{font-size:12px;letter-spacing:.13em;text-transform:uppercase;color:var(--muted);font-weight:700}
+h1{font-family:Georgia,serif;font-size:34px;line-height:1.05;margin:5px 0 0}
+.subtitle{color:var(--muted);margin-top:7px}
+.primary{border:0;background:var(--accent);color:white;border-radius:999px;padding:12px 16px;font-weight:700;box-shadow:var(--shadow)}
+.hero{background:linear-gradient(135deg,#e4eadc,#f8f2e5);border:1px solid var(--line);border-radius:26px;padding:20px;display:flex;justify-content:space-between;gap:18px;align-items:center;margin-bottom:20px}
+.hero h2{font-family:Georgia,serif;margin:0 0 6px;font-size:25px}.hero p{margin:0;color:var(--muted);max-width:550px}
+.paw{font-size:52px;opacity:.65}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:16px 0 24px}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px}.stat b{font-size:23px;display:block}.stat span{font-size:12px;color:var(--muted)}
+.section-head{display:flex;justify-content:space-between;align-items:center;margin:18px 2px 12px}
+.section-head h2{font-family:Georgia,serif;font-size:22px;margin:0}
+.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow);cursor:pointer}
+.photo{height:170px;background:linear-gradient(135deg,#c8d2bd,#e9dfca);display:flex;align-items:center;justify-content:center;color:#66705f;font-size:38px}
+.photo img{width:100%;height:100%;object-fit:cover}.cardbody{padding:15px}
+.cardbody h3{margin:0 0 5px;font-family:Georgia,serif;font-size:21px}.meta{font-size:13px;color:var(--muted);line-height:1.6}
+.tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}.tag{font-size:11px;padding:5px 8px;border-radius:999px;background:#e9eee4;color:#526352}
+.empty{background:var(--card);border:1px dashed var(--line);border-radius:18px;padding:28px;text-align:center;color:var(--muted);grid-column:1/-1}
+.modal{position:fixed;inset:0;background:rgba(30,37,31,.42);display:none;align-items:flex-end;justify-content:center;padding:12px;z-index:10}.modal.open{display:flex}
+.sheet{width:min(680px,100%);max-height:92vh;overflow:auto;background:var(--card);border-radius:24px;padding:20px;box-shadow:0 20px 70px rgba(0,0,0,.2)}
+.sheet h2{font-family:Georgia,serif;margin:0 0 16px}.close{float:right;border:0;background:#eee9de;border-radius:50%;width:36px;height:36px}
+.formgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.field{display:flex;flex-direction:column;gap:6px}.field.full{grid-column:1/-1}
+label{font-size:12px;color:var(--muted);font-weight:700}.field input,.field select,.field textarea{border:1px solid var(--line);border-radius:12px;padding:11px;background:white;color:var(--ink)}
+textarea{min-height:100px;resize:vertical}.actions{display:flex;gap:8px;justify-content:flex-end;margin-top:16px}.secondary{border:1px solid var(--line);background:#f3efe6;border-radius:999px;padding:11px 15px}
+.detail-photo{height:260px;border-radius:16px;overflow:hidden;background:#e4eadc;display:flex;align-items:center;justify-content:center;font-size:50px;margin-bottom:16px}.detail-photo img{width:100%;height:100%;object-fit:cover}
+.detail h2{font-family:Georgia,serif;font-size:29px;margin:0 0 5px}.detail-meta{color:var(--muted);line-height:1.7}.notes{margin-top:16px;padding:15px;background:#f4f0e6;border-radius:15px;white-space:pre-wrap}
+@media(max-width:620px){.grid{grid-template-columns:1fr}.stats{grid-template-columns:repeat(3,1fr)}.hero{padding:17px}.paw{font-size:40px}.photo{height:190px}.formgrid{grid-template-columns:1fr}.field.full{grid-column:auto}h1{font-size:29px}}
+</style>
+<link rel="manifest" href="./manifest.webmanifest"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="Pebble Journal"><meta name="apple-mobile-web-app-status-bar-style" content="default"></head>
+<body>
+<div class="app">
+<header>
+  <div><div class="eyebrow">Pebble's outdoor life</div><h1>Adventure Journal</h1><div class="subtitle">A little record of the trails, miles & memories.</div></div>
+  <button class="primary" onclick="openAdd()">+ Adventure</button>
+</header>
+
+<section class="hero">
+  <div><h2>Keep the good miles.</h2><p>Catalog Pebble's adventures like a nature journal—not a fitness tracker.</p></div>
+  <div class="paw">🐾</div>
+</section>
+
+<div class="stats">
+  <div class="stat"><b id="totalMiles">0</b><span>Total miles</span></div>
+  <div class="stat"><b id="totalTrips">0</b><span>Adventures</span></div>
+  <div class="stat"><b id="trailCount">0</b><span>Trails explored</span></div>
+</div>
+
+<div class="section-head"><h2>Recent adventures</h2></div>
+<div id="cards" class="grid"></div>
+</div>
+
+<div id="modal" class="modal" onclick="if(event.target===this)closeModal()">
+  <div class="sheet" id="sheet"></div>
+</div>
+
+<script>
+const KEY="pebble-adventures-v1";
+let adventures=JSON.parse(localStorage.getItem(KEY)||"[]");
+
+function save(){localStorage.setItem(KEY,JSON.stringify(adventures));render()}
+function esc(s){return String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]))}
+function fmtDate(d){if(!d)return "";return new Date(d+"T12:00:00").toLocaleDateString(undefined,{month:"short",day:"numeric",year:"numeric"})}
+function render(){
+  const miles=adventures.reduce((a,x)=>a+(parseFloat(x.distance)||0),0);
+  const trails=new Set(adventures.map(x=>x.trail.trim().toLowerCase()).filter(Boolean));
+  document.querySelector("#totalMiles").textContent=miles.toFixed(1);
+  document.querySelector("#totalTrips").textContent=adventures.length;
+  document.querySelector("#trailCount").textContent=trails.size;
+  const el=document.querySelector("#cards");
+  if(!adventures.length){el.innerHTML='<div class="empty">No adventures yet.<br>Add Pebble\\'s first trail and start the journal.</div>';return}
+  el.innerHTML=adventures.slice().sort((a,b)=>b.date.localeCompare(a.date)).map(x=>`
+    <article class="card" onclick="openDetail('${x.id}')">
+      <div class="photo">${x.photo?`<img src="${x.photo}" alt="">`:"🌲"}</div>
+      <div class="cardbody"><h3>${esc(x.trail||"Unnamed trail")}</h3>
+      <div class="meta">${fmtDate(x.date)} · ${esc(x.distance||"0")} mi · ${esc(x.surface||"")}</div>
+      <div class="tags">${x.duration?`<span class="tag">${esc(x.duration)}</span>`:""}${x.mood?`<span class="tag">Pebble: ${esc(x.mood)}</span>`:""}</div>
+      </div>
+    </article>`).join("");
+}
+function openAdd(){
+ document.querySelector("#sheet").innerHTML=`
+ <button class="close" onclick="closeModal()">×</button><h2>New adventure</h2>
+ <div class="formgrid">
+  <div class="field"><label>Trail / location</label><input id="trail" placeholder="Wincopin Trails"></div>
+  <div class="field"><label>Date</label><input id="date" type="date" value="${new Date().toISOString().slice(0,10)}"></div>
+  <div class="field"><label>Distance (miles)</label><input id="distance" type="number" step="0.01" placeholder="3.44"></div>
+  <div class="field"><label>Surface</label><select id="surface"><option>Natural</option><option>Gravel</option><option>Mixed</option><option>Paved</option></select></div>
+  <div class="field"><label>Duration</label><input id="duration" placeholder="1 hr 20 min"></div>
+  <div class="field"><label>Pebble's mood</label><input id="mood" placeholder="Happy / curious / chaotic"></div>
+  <div class="field full"><label>Photo (optional)</label><input id="photo" type="file" accept="image/*"></div>
+  <div class="field full"><label>Notes</label><textarea id="notes" placeholder="What did Pebble do? What did you notice?"></textarea></div>
+ </div>
+ <div class="actions"><button class="secondary" onclick="closeModal()">Cancel</button><button class="primary" onclick="addAdventure()">Save adventure</button></div>`;
+ document.querySelector("#modal").classList.add("open");
+}
+function addAdventure(){
+ const file=document.querySelector("#photo").files[0];
+ const data={id:crypto.randomUUID(),trail:trail.value,date:date.value,distance:distance.value,surface:surface.value,duration:duration.value,mood:mood.value,notes:notes.value,photo:""};
+ const finish=()=>{adventures.push(data);save();closeModal()};
+ if(file){const r=new FileReader();r.onload=()=>{data.photo=r.result;finish()};r.readAsDataURL(file)}else finish();
+}
+function openDetail(id){
+ const x=adventures.find(a=>a.id===id); if(!x)return;
+ document.querySelector("#sheet").innerHTML=`
+ <button class="close" onclick="closeModal()">×</button>
+ <div class="detail">
+ <div class="detail-photo">${x.photo?`<img src="${x.photo}" alt="">`:"🌲"}</div>
+ <div class="eyebrow">${esc(x.surface||"Trail")} · ${fmtDate(x.date)}</div>
+ <h2>${esc(x.trail||"Unnamed adventure")}</h2>
+ <div class="detail-meta"><b>${esc(x.distance||"0")} mi</b>${x.duration?" · "+esc(x.duration):""}${x.mood?" · Pebble was "+esc(x.mood):""}</div>
+ ${x.notes?`<div class="notes">${esc(x.notes)}</div>`:""}
+ <div class="actions"><button class="secondary" onclick="deleteAdventure('${x.id}')">Delete</button><button class="primary" onclick="closeModal()">Done</button></div>
+ </div>`;
+ document.querySelector("#modal").classList.add("open");
+}
+function deleteAdventure(id){if(confirm("Delete this adventure?")){adventures=adventures.filter(x=>x.id!==id);save();closeModal()}}
+function closeModal(){document.querySelector("#modal").classList.remove("open")}
+render();
+</script>
+</body>
+</html>
